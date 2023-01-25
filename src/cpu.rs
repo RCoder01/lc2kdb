@@ -7,7 +7,7 @@ enum Register {
     R4 = 4,
     R5 = 5,
     R6 = 6,
-    R7 = 7
+    R7 = 7,
 }
 
 impl Register {
@@ -21,19 +21,42 @@ impl Register {
             0b101 => Self::R5,
             0b110 => Self::R6,
             0b111 => Self::R7,
-            _ => unreachable!()
+            _ => unreachable!(),
         }
     }
 }
 
 #[derive(Debug)]
 enum Instruction {
-    Add { reg_a: Register, reg_b: Register, dst_reg: Register },
-    Nor { reg_a: Register, reg_b: Register, dst_reg: Register },
-    Lw { reg_a: Register, reg_b: Register, offset_field: i16},
-    Sw { reg_a: Register, reg_b: Register, offset_field: i16},
-    Beq { reg_a: Register, reg_b: Register, offset_field: i16},
-    Jalr { reg_a: Register, reg_b: Register },
+    Add {
+        reg_a: Register,
+        reg_b: Register,
+        dst_reg: Register,
+    },
+    Nor {
+        reg_a: Register,
+        reg_b: Register,
+        dst_reg: Register,
+    },
+    Lw {
+        reg_a: Register,
+        reg_b: Register,
+        offset_field: i16,
+    },
+    Sw {
+        reg_a: Register,
+        reg_b: Register,
+        offset_field: i16,
+    },
+    Beq {
+        reg_a: Register,
+        reg_b: Register,
+        offset_field: i16,
+    },
+    Jalr {
+        reg_a: Register,
+        reg_b: Register,
+    },
     Halt,
     Noop,
 }
@@ -43,28 +66,48 @@ impl Instruction {
         match code >> 22 & 0b111 {
             0b000 => {
                 let (reg_a, reg_b, dst_reg) = Instruction::parse_r(code);
-                Self::Add { reg_a, reg_b, dst_reg }
-            },
+                Self::Add {
+                    reg_a,
+                    reg_b,
+                    dst_reg,
+                }
+            }
             0b001 => {
                 let (reg_a, reg_b, dst_reg) = Instruction::parse_r(code);
-                Self::Nor { reg_a, reg_b, dst_reg }
-            },
+                Self::Nor {
+                    reg_a,
+                    reg_b,
+                    dst_reg,
+                }
+            }
             0b010 => {
                 let (reg_a, reg_b, offset_field) = Instruction::parse_i(code);
-                Self::Lw { reg_a, reg_b, offset_field }
-            },
+                Self::Lw {
+                    reg_a,
+                    reg_b,
+                    offset_field,
+                }
+            }
             0b011 => {
                 let (reg_a, reg_b, offset_field) = Instruction::parse_i(code);
-                Self::Sw { reg_a, reg_b, offset_field }
-            },
+                Self::Sw {
+                    reg_a,
+                    reg_b,
+                    offset_field,
+                }
+            }
             0b100 => {
                 let (reg_a, reg_b, offset_field) = Instruction::parse_i(code);
-                Self::Beq { reg_a, reg_b, offset_field }
-            },
+                Self::Beq {
+                    reg_a,
+                    reg_b,
+                    offset_field,
+                }
+            }
             0b101 => {
                 let (reg_a, reg_b) = Instruction::parse_j(code);
                 Self::Jalr { reg_a, reg_b }
-            },
+            }
             0b110 => Self::Halt,
             0b111 => Self::Noop,
             _ => unreachable!(),
@@ -72,11 +115,19 @@ impl Instruction {
     }
 
     fn parse_r(code: u32) -> (Register, Register, Register) {
-        (Register::new(code >> 19), Register::new(code >> 16), Register::new(code))
+        (
+            Register::new(code >> 19),
+            Register::new(code >> 16),
+            Register::new(code),
+        )
     }
 
     fn parse_i(code: u32) -> (Register, Register, i16) {
-        (Register::new(code >> 19), Register::new(code >> 16), (code & 0xFFFF) as i16)
+        (
+            Register::new(code >> 19),
+            Register::new(code >> 16),
+            (code & 0xFFFF) as i16,
+        )
     }
 
     fn parse_j(code: u32) -> (Register, Register) {
@@ -99,7 +150,12 @@ impl CPU {
         for (index, item) in starting_memory.enumerate() {
             memory[index] = item;
         }
-        CPU { register_file: [0; 8], memory, pc: 0, halted: false}
+        CPU {
+            register_file: [0; 8],
+            memory,
+            pc: 0,
+            halted: false,
+        }
     }
 
     pub fn print_registers(&self) {
@@ -109,11 +165,10 @@ impl CPU {
     }
 
     pub fn print_memory(&self, start_addr: u32, count: u32) {
-        let start_addr = start_addr as usize;
         for val in &self.memory[(start_addr as usize)..(start_addr as usize) + (count as usize)] {
             print!("{:08X} ", val);
         }
-        println!("");
+        println!();
     }
 
     pub fn print_program_counter(&self) {
@@ -152,37 +207,69 @@ impl CPU {
         let instruction = self.memory[self.pc as usize];
         let instruction = Instruction::new(instruction);
         match instruction {
-            Instruction::Add { reg_a, reg_b, dst_reg } => {
-                self.set_register(dst_reg, self.get_register(reg_a).wrapping_add(self.get_register(reg_b)));
-            },
-            Instruction::Nor { reg_a, reg_b, dst_reg } => {
-                self.set_register(dst_reg, !(self.get_register(reg_a) | self.get_register(reg_b)));
-            },
-            Instruction::Lw { reg_a, reg_b, offset_field } => {
-                self.set_register(reg_b, self.memory[CPU::offset_memory(self.get_register(reg_a), offset_field) as usize]);
-            },
-            Instruction::Sw { reg_a, reg_b, offset_field } => {
-                self.memory[CPU::offset_memory(self.get_register(reg_a), offset_field) as usize] = self.get_register(reg_b);
-            },
-            Instruction::Beq { reg_a, reg_b, offset_field } => {
+            Instruction::Add {
+                reg_a,
+                reg_b,
+                dst_reg,
+            } => {
+                self.set_register(
+                    dst_reg,
+                    self.get_register(reg_a)
+                        .wrapping_add(self.get_register(reg_b)),
+                );
+            }
+            Instruction::Nor {
+                reg_a,
+                reg_b,
+                dst_reg,
+            } => {
+                self.set_register(
+                    dst_reg,
+                    !(self.get_register(reg_a) | self.get_register(reg_b)),
+                );
+            }
+            Instruction::Lw {
+                reg_a,
+                reg_b,
+                offset_field,
+            } => {
+                self.set_register(
+                    reg_b,
+                    self.memory
+                        [CPU::offset_memory(self.get_register(reg_a), offset_field) as usize],
+                );
+            }
+            Instruction::Sw {
+                reg_a,
+                reg_b,
+                offset_field,
+            } => {
+                self.memory[CPU::offset_memory(self.get_register(reg_a), offset_field) as usize] =
+                    self.get_register(reg_b);
+            }
+            Instruction::Beq {
+                reg_a,
+                reg_b,
+                offset_field,
+            } => {
                 if self.get_register(reg_a) == self.get_register(reg_b) {
                     self.pc = CPU::offset_memory(self.pc, offset_field);
                 }
-            },
+            }
             Instruction::Jalr { reg_a, reg_b } => {
                 self.set_register(reg_b, self.pc + 1);
                 self.pc = self.get_register(reg_a);
                 return false;
-            },
+            }
             Instruction::Halt => {
                 self.pc += 1;
                 self.halted = true;
                 return true;
-            },
-            Instruction::Noop => {},
+            }
+            Instruction::Noop => {}
         }
         self.pc += 1;
-        return false;
+        false
     }
 
     fn offset_memory(address: u32, offset_field: i16) -> u32 {

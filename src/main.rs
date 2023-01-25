@@ -6,11 +6,11 @@ mod cpu;
 enum Error {
     FileNotFound,
     NotEnoughArguments,
-    StdoutError,
-    StdinError,
+    Stdout,
+    Stdin,
 }
 
-const HELP_MESSAGE: &'static str = r#"\
+const HELP_MESSAGE: &str = r#"\
 h|help           -> show this help message
 s|step `n`       -> step program forward `n` steps (default: 1)
 r|regs           -> show current register values
@@ -30,7 +30,7 @@ fn main() -> Result<(), Error> {
     let mut line = String::new();
     let read = || {
         line.clear();
-        if let Err(_) = reader.read_line(&mut line) {
+        if reader.read_line(&mut line).is_err() {
             None
         } else {
             line.trim_end().parse::<isize>().ok().map(|n| n as u32)
@@ -42,7 +42,7 @@ fn main() -> Result<(), Error> {
     let mut line = String::new();
     loop {
         get_input(&mut line)?;
-        let args = line.trim().split_whitespace();
+        let args = line.split_whitespace();
         match process_repl_input(args, &mut cpu) {
             Err(_) => println!("Unrecognized command. Use `help` for usage."),
             Ok(quit) => {
@@ -57,8 +57,8 @@ fn main() -> Result<(), Error> {
 
 fn get_input(str: &mut String) -> Result<(), Error> {
     print!(">>> ");
-    std::io::stdout().flush().map_err(|_| Error::StdoutError)?;
-    std::io::stdin().read_line(str).map_err(|_| Error::StdinError)?;
+    std::io::stdout().flush().map_err(|_| Error::Stdout)?;
+    std::io::stdin().read_line(str).map_err(|_| Error::Stdin)?;
     Ok(())
 }
 
@@ -70,10 +70,7 @@ fn process_repl_input<'a, T: Iterator<Item = &'a str>>(mut args: T, cpu: &mut cp
     match op {
         "help" | "h" => println!("{}", HELP_MESSAGE),
         "step" | "s" => {
-            let count = match parse_from_arg::<usize>(args.next()) {
-                Ok(count) => count,
-                Err(_) => 1,
-            };
+            let count = parse_from_arg::<usize>(args.next()).unwrap_or(1);
             if cpu.step_n(count) {
                 println!("Program has halted");
             }
@@ -97,6 +94,6 @@ fn process_repl_input<'a, T: Iterator<Item = &'a str>>(mut args: T, cpu: &mut cp
     Ok(false)
 }
 
-fn parse_from_arg<'a, T: FromStr>(arg: Option<&'a str>) -> Result<T, UnrecognizedCommandError> {
+fn parse_from_arg<T: FromStr>(arg: Option<&'_ str>) -> Result<T, UnrecognizedCommandError> {
     arg.ok_or(UnrecognizedCommandError)?.parse::<T>().map_err(|_| UnrecognizedCommandError)
 }
