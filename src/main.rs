@@ -1,4 +1,9 @@
-use std::{fs::File, io::{BufReader, BufRead, Write}, iter, str::FromStr};
+use std::{
+    fs::File,
+    io::{BufRead, BufReader, Write},
+    iter,
+    str::FromStr,
+};
 
 mod cpu;
 
@@ -46,14 +51,15 @@ fn main() -> Result<(), Error> {
         match process_repl_input(args, &mut cpu) {
             Err(_) => println!("Unrecognized command. Use `help` for usage."),
             Ok(quit) => {
-                if quit {break;};
-            },
+                if quit {
+                    break;
+                };
+            }
         }
         line.clear();
-    };
+    }
     Ok(())
 }
-
 
 fn get_input(str: &mut String) -> Result<(), Error> {
     print!(">>> ");
@@ -62,10 +68,12 @@ fn get_input(str: &mut String) -> Result<(), Error> {
     Ok(())
 }
 
-
 struct UnrecognizedCommandError;
 
-fn process_repl_input<'a, T: Iterator<Item = &'a str>>(mut args: T, cpu: &mut cpu::CPU) -> Result<bool, UnrecognizedCommandError> {
+fn process_repl_input<'a, T: Iterator<Item = &'a str>>(
+    mut args: T,
+    cpu: &mut cpu::CPU,
+) -> Result<bool, UnrecognizedCommandError> {
     let op = args.next().ok_or(UnrecognizedCommandError)?;
     match op {
         "help" | "h" => println!("{}", HELP_MESSAGE),
@@ -74,19 +82,19 @@ fn process_repl_input<'a, T: Iterator<Item = &'a str>>(mut args: T, cpu: &mut cp
             if cpu.step_n(count) {
                 println!("Program has halted");
             }
-        },
+        }
         "regs" | "r" => cpu.print_registers(),
         "mem" | "m" => {
             let addr = parse_from_arg::<u32>(args.next())?;
             let count = parse_from_arg::<u32>(args.next())?;
             cpu.print_memory(addr, count);
-        },
+        }
         "pc" | "p" => {
             cpu.print_program_counter();
-        },
+        }
         "quit" | "q" => {
             return Ok(true);
-        },
+        }
         _ => {
             return Err(UnrecognizedCommandError);
         }
@@ -95,5 +103,7 @@ fn process_repl_input<'a, T: Iterator<Item = &'a str>>(mut args: T, cpu: &mut cp
 }
 
 fn parse_from_arg<T: FromStr>(arg: Option<&'_ str>) -> Result<T, UnrecognizedCommandError> {
-    arg.ok_or(UnrecognizedCommandError)?.parse::<T>().map_err(|_| UnrecognizedCommandError)
+    arg.ok_or(UnrecognizedCommandError)?
+        .parse::<T>()
+        .map_err(|_| UnrecognizedCommandError)
 }
