@@ -20,6 +20,7 @@ s|step `n`       -> step program forward `n` steps (default: 1)
 r|regs           -> show current register values
 m|mem `addr` `n` -> read `n` bits starting from address `addr`
 p|pc             -> display current program counter
+i|ins `n`        -> print the `n` memory addresses after pc as instructions
 q|quit           -> close debugger"#;
 
 fn main() -> Result<(), Error> {
@@ -90,6 +91,10 @@ fn process_repl_input<'a, T: Iterator<Item = &'a str>>(
         }
         "pc" | "p" => {
             cpu.print_program_counter();
+        }
+        "ins" | "i" => {
+            let count = parse_from_arg::<usize>(args.next()).unwrap_or(1);
+            cpu.print_instruction(count);
         }
         "quit" | "q" => {
             return Ok(true);

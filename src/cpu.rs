@@ -26,6 +26,12 @@ impl Register {
     }
 }
 
+impl std::fmt::Display for Register {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "r{}", *self as u8)
+    }
+}
+
 #[derive(Debug)]
 enum Instruction {
     Add {
@@ -135,6 +141,65 @@ impl Instruction {
     }
 }
 
+impl std::fmt::Display for Instruction {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            Instruction::Add {
+                reg_a,
+                reg_b,
+                dst_reg,
+            } => {
+                write!(f, "add  {reg_a} {reg_b}      {dst_reg}: {dst_reg} = {reg_a} + {reg_b}")
+            }
+            Instruction::Nor {
+                reg_a,
+                reg_b,
+                dst_reg,
+            } => {
+                write!(f, "nor {reg_a} {reg_b}       {dst_reg}: {dst_reg} = ~({reg_a} | {reg_b})")
+            }
+            Instruction::Lw {
+                reg_a,
+                reg_b,
+                offset_field,
+            } => {
+                if *offset_field >= 0 {
+                    write!(f, "lw   {reg_a} {reg_b} {offset_field:7}: {reg_b} = *({reg_a} + {offset_field})")
+                } else {
+                    write!(f, "lw   {reg_a} {reg_b} {offset_field:7}: {reg_b} = *({reg_a} - {})", -1*offset_field)
+                }
+            }
+            Instruction::Sw {
+                reg_a,
+                reg_b,
+                offset_field,
+            } => {
+                if *offset_field >= 0 {
+                    write!(f, "sw   {reg_a} {reg_b} {offset_field:7}: *({reg_a} + {offset_field}) = {reg_b}")
+                } else {
+                    write!(f, "sw   {reg_a} {reg_b} {offset_field:7}: *({reg_a} - {}) = {reg_b}", -1*offset_field)
+                }
+            }
+            Instruction::Beq {
+                reg_a,
+                reg_b,
+                offset_field,
+            } => {
+                write!(f, "beq  {reg_a} {reg_b} {offset_field:7}: if {reg_a}=={reg_b}: pc += {offset_field}")
+            }
+            Instruction::Jalr { reg_a, reg_b } => {
+                write!(f, "jalr {reg_a} {reg_b}        : {reg_b} <- pc+1; pc <- {reg_a}")
+            }
+            Instruction::Halt => {
+                write!(f, "halt")
+            }
+            Instruction::Noop => {
+                write!(f, "noop")
+            }
+        }
+    }
+}
+
 const MEMORY_SIZE: usize = 65536;
 #[derive(Debug)]
 pub struct CPU {
@@ -173,6 +238,13 @@ impl CPU {
 
     pub fn print_program_counter(&self) {
         println!("{}", self.pc);
+    }
+
+    pub fn print_instruction(&self, amount: usize) {
+        for i in 0..amount {
+            let addr = self.pc as usize + i;
+            println!("{addr:X}: {}", Instruction::new(self.memory[addr]));
+        }
     }
 
     #[inline]
