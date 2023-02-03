@@ -15,8 +15,7 @@ enum Error {
     Stdin,
 }
 
-const HELP_MESSAGE: &str = r#"\
-h|help           -> show this help message
+const HELP_MESSAGE: &str = r#"h|help           -> show this help message
 s|step `n`       -> step program forward `n` steps (default: 1)
 r|regs           -> show current register values
 m|mem `addr` `n` -> read `n` bits starting from address `addr`
