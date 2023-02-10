@@ -243,7 +243,7 @@ impl CPU {
     pub fn print_instruction(&self, amount: usize) {
         for i in 0..amount {
             let addr = self.pc as usize + i;
-            println!("{addr:X}: {}", Instruction::new(self.memory[addr]));
+            println!("0x{addr:X}: {}", Instruction::new(self.memory[addr]));
         }
     }
 

@@ -18,9 +18,9 @@ enum Error {
 const HELP_MESSAGE: &str = r#"h|help           -> show this help message
 s|step `n`       -> step program forward `n` steps (default: 1)
 r|regs           -> show current register values
-m|mem `addr` `n` -> read `n` bits starting from address `addr`
+m|mem `addr` `n` -> read `n` (default: 1) bits starting from address `addr` (default: 0)
 p|pc             -> display current program counter
-i|ins `n`        -> print the `n` memory addresses after pc as instructions
+i|ins `n`        -> print the `n` (default: 1) memory addresses after pc as instructions
 q|quit           -> close debugger"#;
 
 fn main() -> Result<(), Error> {
@@ -85,8 +85,8 @@ fn process_repl_input<'a, T: Iterator<Item = &'a str>>(
         }
         "regs" | "r" => cpu.print_registers(),
         "mem" | "m" => {
-            let addr = parse_from_arg::<u32>(args.next())?;
-            let count = parse_from_arg::<u32>(args.next())?;
+            let addr = parse_from_arg::<u32>(args.next()).unwrap_or(0);
+            let count = parse_from_arg::<u32>(args.next()).unwrap_or(1);
             cpu.print_memory(addr, count);
         }
         "pc" | "p" => {
