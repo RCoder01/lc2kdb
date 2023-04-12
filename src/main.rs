@@ -21,7 +21,8 @@ r|regs           -> show current register values
 m|mem `addr` `n` -> read `n` (default: 1) bits starting from address `addr` (default: 0)
 p|pc             -> display current program counter
 i|ins `n`        -> print the `n` (default: 1) memory addresses after pc as instructions
-q|quit           -> close debugger"#;
+q|quit           -> close debugger
+c|count          -> print number of clock cycles executed"#;
 
 fn main() -> Result<(), Error> {
     let args = std::env::args();
@@ -38,7 +39,7 @@ fn main() -> Result<(), Error> {
         if reader.read_line(&mut line).is_err() {
             None
         } else {
-            line.trim_end().parse::<isize>().ok().map(|n| n as u32)
+            line.trim_end().parse::<i64>().ok().map(|n| n as u32)
         }
     };
 
@@ -98,6 +99,9 @@ fn process_repl_input<'a, T: Iterator<Item = &'a str>>(
         }
         "quit" | "q" => {
             return Ok(true);
+        }
+        "count" | "c" => {
+            println!("{}", cpu.get_instruction_count());
         }
         _ => {
             return Err(UnrecognizedCommandError);

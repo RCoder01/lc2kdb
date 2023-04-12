@@ -207,6 +207,7 @@ pub struct CPU {
     memory: Box<[u32; MEMORY_SIZE]>,
     pc: u32,
     halted: bool,
+    instruction_count: u128,
 }
 
 impl CPU {
@@ -220,6 +221,7 @@ impl CPU {
             memory,
             pc: 0,
             halted: false,
+            instruction_count: 0,
         }
     }
 
@@ -276,6 +278,7 @@ impl CPU {
         if self.halted {
             return true;
         };
+        self.instruction_count += 1;
         let instruction = self.memory[self.pc as usize];
         let instruction = Instruction::new(instruction);
         match instruction {
@@ -346,5 +349,9 @@ impl CPU {
 
     fn offset_memory(address: u32, offset_field: i16) -> u32 {
         address.wrapping_add_signed(offset_field as i32)
+    }
+
+    pub fn get_instruction_count(&self) -> u128 {
+        self.instruction_count
     }
 }
